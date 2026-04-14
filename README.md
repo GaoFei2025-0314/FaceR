@@ -1,13 +1,22 @@
-# FaceAuth — Next.js 人脸识别登录
+# FaceAuth — 人脸识别登录系统
 
-基于 **Face++（旷视）** 的全栈人脸识别登录 Demo，使用 Next.js 14 App Router。
+基于 **Face++（旷视）** + **face-api.js** 的全栈人脸识别登录系统，使用 Next.js 14 App Router。
 
 ## 功能
 
 - 🏠 **首页**：默认展示"人脸识别登录"选项
-- 👁 **人脸登录**：开摄像头 → 自动检测图像质量 → 截图 → Face++ 识别 → 跳转仪表盘
-- 📝 **人脸注册**：填写信息 → 开摄像头 → 自动录入人脸
+- 👁 **人脸登录**：本地人脸预检测 → 图像质量分析 → 自动截图 → Face++ 识别 → 跳转仪表盘
+- 📝 **人脸注册**：填写信息 → 开摄像头 → 自动录入人脸到 FaceSet
 - 🏛 **仪表盘**：登录后的首页，展示用户信息
+- 🔐 **API 优化**：每次登录仅调用 1 次 Face++ API
+
+## 技术栈
+
+- **前端框架**: Next.js 14 (App Router)
+- **UI**: React 18 + CSS Modules
+- **本地人脸检测**: face-api.js (TinyFaceDetector)
+- **人脸识别 API**: Face++ (旷视)
+- **数据库**: JSON 文件（测试用）/ 可扩展为 PostgreSQL/MySQL
 
 ## 快速开始
 
@@ -67,29 +76,48 @@ face-login/
 │   └── api/auth/
 │       ├── face-login/route.ts    # 登录 API
 │       ├── face-register/route.ts # 注册 API
+│       ├── face-detect/route.ts  # 人脸检测 API
 │       ├── me/route.ts            # 获取当前用户
 │       └── logout/route.ts        # 退出登录
 ├── lib/
 │   ├── facepp.ts                  # Face++ API 封装
-│   ├── db.ts                      # JSON 文件数据库（测试用）
+│   ├── db.ts                      # JSON 文件数据库
 │   └── session.ts                 # Cookie Session 管理
-└── data/
-    └── db.json                    # 自动生成的数据文件
+└── public/
+    └── models/                    # face-api.js 模型（如需本地部署）
 ```
 
-## 人脸识别逻辑
+## 人脸识别流程（已优化）
 
-**自动截图触发条件**（无需手动点击）：
-1. 分析每帧图像的亮度和纹理（图像质量评分）
-2. 质量分 ≥ 65% 时开始计数
-3. 连续 6 帧（约 1.8 秒）质量达标 → 自动截图上传
+### 两阶段检测策略
 
-**Face++ 识别流程**：
-- 使用 `/v3/search` 在 FaceSet 中搜索最匹配人脸
-- 置信度需超过 Face++ 推荐的 `1e-5` 阈值（约 73.975）才认为匹配成功
+**第一阶段：本地检测（免费，每 300ms）**
+1. 使用 face-api.js TinyFaceDetector 在浏览器端检测人脸
+2. 分析图像质量（亮度 + 纹理）
+3. 未检测到人脸 → 立即跳过，重置计数器
+
+**第二阶段：Face++ API（仅 1 次/登录）**
+1. 连续 3 帧检测到人脸 + 质量 ≥ 65%
+2. 调用 Face++ search API 进行身份验证
+3. 置信度超过 1e-5 阈值（约 73.975）→ 登录成功
+
+### 参数配置
+
+| 参数 | 值 | 说明 |
+|------|-----|------|
+| QUALITY_THRESHOLD | 0.65 | 图像质量阈值 |
+| STABLE_FRAMES | 3 | 稳定帧数 |
+| CAPTURE_INTERVAL | 300ms | 检测间隔 |
+
+### API 调用优化
+
+- **优化前**: 每次登录 6+ 次 API 调用
+- **优化后**: 每次登录 **1 次** Face++ API
+- 主要节省：使用 face-api.js 本地预检测，过滤无效帧
 
 ## 注意事项
 
 - `data/db.json` 是测试用的 JSON 文件数据库，生产环境请换成 PostgreSQL/MySQL
 - Session 使用简单 Base64 编码，生产环境请用 `iron-session` 或 `jose` 加密
-- Face++ 免费版 API 限速，并发高时请升级套餐
+- face-api.js 模型通过 CDN 加载（jsdelivr），确保网络畅通
+- Face++ 免费版 API 限速 1000 次/月，优化后可用 1000+ 次登录
