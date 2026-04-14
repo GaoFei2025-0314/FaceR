@@ -1,6 +1,6 @@
 # FaceAuth — 人脸识别登录系统
 
-基于 **Face++（旷视）** + **face-api.js** 的全栈人脸识别登录系统，使用 Next.js 14 App Router。
+基于 **Face++（旷视）** + **face-api.js** 的全栈人脸识别登录系统，使用 Next.js 16 App Router。
 
 ## 功能
 
@@ -12,7 +12,7 @@
 
 ## 技术栈
 
-- **前端框架**: Next.js 14 (App Router)
+- **前端框架**: Next.js 16 (App Router)
 - **UI**: React 18 + CSS Modules
 - **本地人脸检测**: face-api.js (TinyFaceDetector)
 - **人脸识别 API**: Face++ (旷视)

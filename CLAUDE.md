@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-FaceAuth is a Next.js 14 App Router application that implements face-based authentication using Face++ (旷视) API and face-api.js for local detection. It includes face registration, login, and a protected dashboard.
+FaceAuth is a Next.js 16 App Router application that implements face-based authentication using Face++ (旷视) API and face-api.js for local detection. It includes face registration, login, and a protected dashboard.
 
 ## Commands
 
